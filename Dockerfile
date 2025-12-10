@@ -1,37 +1,40 @@
 # =========================================================
-# ЕТАП 1: Збірка ФРОНТЕНДУ (React/Vite)
+# ЕТАП 1: Збірка ФРОНТЕНДУ (React/Vite) - ВИПРАВЛЕНО
 # =========================================================
 FROM node:20-alpine AS frontend-build
-WORKDIR /app/client
+WORKDIR /app/client/simpletodolesson.client 
 
-# Копіюємо лише те, що потрібно для встановлення залежностей
+# Копіюємо package.json та встановлюємо залежності
 COPY simpletodolesson.client/package*.json ./
-RUN npm install
+RUN npm install 
 
-# Копіюємо решту файлів клієнта
+# Копіюємо решту файлів клієнта 
 COPY simpletodolesson.client/ ./
-# Команда збірки Vite
-RUN npm run build -- --output-dir ../server/wwwroot
+ 
+# Збираємо фронтенд. Шлях для виводу повинен бути абсолютним,
+# щоб уникнути помилок шляху.
+# Ми копіюємо в папку /app/server/wwwroot, яку створимо пізніше.
+RUN npm run build --outDir /app/server/wwwroot 
 
 # =========================================================
-# ЕТАП 2: Збірка БЕКЕНДУ (.NET)
+# ЕТАП 2: Збірка БЕКЕНДУ (.NET) - ТЕЖ ПОТРЕБУЄ ВИПРАВЛЕННЯ
 # =========================================================
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Копіюємо файли рішення та відновлюємо залежності
+# Копіюємо файли рішення
 COPY SimpleTODOLesson.Server/*.csproj SimpleTODOLesson.Server/
 RUN dotnet restore SimpleTODOLesson.Server/SimpleTODOLesson.Server.csproj
 
-# Копіюємо решту файлів бекенду
 COPY SimpleTODOLesson.Server/ SimpleTODOLesson.Server/
 
-# Копіюємо зібраний фронтенд з першого етапу
-COPY --from=frontend-build /app/client/wwwroot SimpleTODOLesson.Server/wwwroot
+# *** ВИПРАВЛЕННЯ: Тепер копіюємо з абсолютного шляху, який вказали вище ***
+COPY --from=frontend-build /app/server/wwwroot SimpleTODOLesson.Server/wwwroot
 
-# Публікуємо (створюємо остаточний білд)
+# Публікуємо
 WORKDIR /src/SimpleTODOLesson.Server
 RUN dotnet publish -c Release -o /app/publish
+# ... (Фінальний етап залишаємо без змін)
 
 # =========================================================
 # ЕТАП 3: ФІНАЛЬНИЙ ОБРАЗ (Запуск)

@@ -31,6 +31,15 @@ app.UseRouting();
 
 app.UseSession();
 
+// БЛОК ДЛЯ АВТОМАТИЧНОГО ЗАСТОСУВАННЯ МІГРАЦІЙ
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var context = services.GetRequiredService<ApplicationDbContext>();
+    // Це застосує міграції, створюючи базу даних SQLite
+    context.Database.Migrate(); 
+}
+
 app.MapControllers();
 app.MapFallbackToFile("/index.html");
 
