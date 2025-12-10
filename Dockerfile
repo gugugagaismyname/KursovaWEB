@@ -1,23 +1,26 @@
 # =========================================================
-# ЕТАП 1: Збірка ФРОНТЕНДУ (React/Vite) - ВИПРАВЛЕНО
+# ЕТАП 1: Збірка ФРОНТЕНДУ (React/Vite) - ФІНАЛЬНЕ ВИПРАВЛЕННЯ ШЛЯХУ
 # =========================================================
 FROM node:20-alpine AS frontend-build
-WORKDIR /app/client/simpletodolesson.client 
+
+# Встановлюємо робочу директорію, де знаходиться package.json клієнта
+WORKDIR /src/simpletodolesson.client 
 
 # Копіюємо package.json та встановлюємо залежності
+# (Це гарантує, що npm install пройде успішно)
 COPY simpletodolesson.client/package*.json ./
 RUN npm install 
 
-# Копіюємо решту файлів клієнта 
+# Копіюємо решту файлів клієнта (включаючи src/, public/ та vite.config.js)
 COPY simpletodolesson.client/ ./
  
-# Збираємо фронтенд. Шлях для виводу повинен бути абсолютним,
-# щоб уникнути помилок шляху.
-# Ми копіюємо в папку /app/server/wwwroot, яку створимо пізніше.
-RUN npm run build --outDir /app/server/wwwroot 
+# Збираємо фронтенд. 
+# ВИХІДНИЙ ШЛЯХ: /app/publish/wwwroot. Це має бути унікальна папка, 
+# яку ми потім скопіюємо у wwwroot ASP.NET Core.
+RUN npm run build --outDir /app/publish/wwwroot 
 
 # =========================================================
-# ЕТАП 2: Збірка БЕКЕНДУ (.NET) - ТЕЖ ПОТРЕБУЄ ВИПРАВЛЕННЯ
+# ЕТАП 2: Збірка БЕКЕНДУ (.NET) - КОРИГУВАННЯ КОПІЮВАННЯ ФРОНТЕНДУ
 # =========================================================
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -28,13 +31,14 @@ RUN dotnet restore SimpleTODOLesson.Server/SimpleTODOLesson.Server.csproj
 
 COPY SimpleTODOLesson.Server/ SimpleTODOLesson.Server/
 
-# *** ВИПРАВЛЕННЯ: Тепер копіюємо з абсолютного шляху, який вказали вище ***
-COPY --from=frontend-build /app/server/wwwroot SimpleTODOLesson.Server/wwwroot
+# *** ВИПРАВЛЕННЯ: Копіюємо зібраний фронтенд з папки /app/publish/wwwroot ***
+COPY --from=frontend-build /app/publish/wwwroot SimpleTODOLesson.Server/wwwroot
 
 # Публікуємо
 WORKDIR /src/SimpleTODOLesson.Server
 RUN dotnet publish -c Release -o /app/publish
-# ... (Фінальний етап залишаємо без змін)
+
+# ... (Етап 3: Фінальний образ - залишаємо без змін)
 
 # =========================================================
 # ЕТАП 3: ФІНАЛЬНИЙ ОБРАЗ (Запуск)
