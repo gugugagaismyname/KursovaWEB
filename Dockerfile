@@ -17,7 +17,7 @@ COPY simpletodolesson.client/ ./
 # Збираємо фронтенд. 
 # ВИХІДНИЙ ШЛЯХ: /app/publish/wwwroot. Це має бути унікальна папка, 
 # яку ми потім скопіюємо у wwwroot ASP.NET Core.
-RUN npm run build --outDir /app/publish/wwwroot 
+RUN npm run build
 
 # =========================================================
 # ЕТАП 2: Збірка БЕКЕНДУ (.NET) - КОРИГУВАННЯ КОПІЮВАННЯ ФРОНТЕНДУ
@@ -32,7 +32,7 @@ RUN dotnet restore SimpleTODOLesson.Server/SimpleTODOLesson.Server.csproj
 COPY SimpleTODOLesson.Server/ SimpleTODOLesson.Server/
 
 # *** ВИПРАВЛЕННЯ: Копіюємо зібраний фронтенд з папки /app/publish/wwwroot ***
-COPY --from=frontend-build /app/publish/wwwroot SimpleTODOLesson.Server/wwwroot
+COPY --from=frontend-build /src/simpletodolesson.client/dist SimpleTODOLesson.Server/wwwroot
 
 # Публікуємо
 WORKDIR /src/SimpleTODOLesson.Server
