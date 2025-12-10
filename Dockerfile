@@ -1,5 +1,5 @@
 # =========================================================
-# ЕТАП 1: Збірка ФРОНТЕНДУ (React/Vite) - ФІНАЛЬНЕ ВИПРАВЛЕННЯ ШЛЯХУ
+# ЕТАП 1: Збірка ФРОНТЕНДУ (React/Vite) - ФІНАЛЬНА КОНФІГУРАЦІЯ
 # =========================================================
 FROM node:20-alpine AS frontend-build
 
@@ -7,20 +7,18 @@ FROM node:20-alpine AS frontend-build
 WORKDIR /src/simpletodolesson.client 
 
 # Копіюємо package.json та встановлюємо залежності
-# (Це гарантує, що npm install пройде успішно)
 COPY simpletodolesson.client/package*.json ./
 RUN npm install 
 
 # Копіюємо решту файлів клієнта (включаючи src/, public/ та vite.config.js)
 COPY simpletodolesson.client/ ./
  
-# Збираємо фронтенд. 
-# ВИХІДНИЙ ШЛЯХ: /app/publish/wwwroot. Це має бути унікальна папка, 
-# яку ми потім скопіюємо у wwwroot ASP.NET Core.
-RUN npm run build
+# Збираємо фронтенд. Vite створить папку 'dist' у поточній робочій директорії.
+# Зверніть увагу: ми використовуємо просту команду 'npm run build'.
+RUN npm run build 
 
 # =========================================================
-# ЕТАП 2: Збірка БЕКЕНДУ (.NET) - КОРИГУВАННЯ КОПІЮВАННЯ ФРОНТЕНДУ
+# ЕТАП 2: Збірка БЕКЕНДУ (.NET) - КОРИГУВАННЯ КОПІЮВАННЯ
 # =========================================================
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
@@ -31,14 +29,13 @@ RUN dotnet restore SimpleTODOLesson.Server/SimpleTODOLesson.Server.csproj
 
 COPY SimpleTODOLesson.Server/ SimpleTODOLesson.Server/
 
-# *** ВИПРАВЛЕННЯ: Копіюємо зібраний фронтенд з папки /app/publish/wwwroot ***
+# *** ВИПРАВЛЕННЯ: Копіюємо зібраний фронтенд з папки dist, створеної Vite ***
+# Шлях до dist: /src/simpletodolesson.client/dist
 COPY --from=frontend-build /src/simpletodolesson.client/dist SimpleTODOLesson.Server/wwwroot
 
 # Публікуємо
 WORKDIR /src/SimpleTODOLesson.Server
 RUN dotnet publish -c Release -o /app/publish
-
-# ... (Етап 3: Фінальний образ - залишаємо без змін)
 
 # =========================================================
 # ЕТАП 3: ФІНАЛЬНИЙ ОБРАЗ (Запуск)
@@ -48,13 +45,7 @@ WORKDIR /app
 # Копіюємо опубліковані файли
 COPY --from=build /app/publish .
 
-# Налаштовуємо порт: Render використовує змінну PORT, яка зазвичай має значення 10000,
-# тому ми повинні встановити ASPNETCORE_URLS для прослуховування цього порту.
+# Налаштовуємо порт: Render використовує 10000
 ENV ASPNETCORE_URLS=http://+:10000 
-# Встановлюємо змінну середовища для бази даних SQLite
-# Якщо ви не використовуєте змінну середовища в коді, це не обов'язково,
-# але це гарна практика для розгортання
-# ENV ConnectionStrings__DefaultConnection="Data Source=/app/app.db"
-
 # Запускаємо додаток
 ENTRYPOINT ["dotnet", "SimpleTODOLesson.Server.dll"]
