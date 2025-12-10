@@ -1,50 +1,33 @@
-// simpletodolesson.client/vite.config.js (Виправлена версія)
+// simpletodolesson.client/vite.config.js
 
-import { fileURLToPath, URL } from 'node:url';
+import { fileURLToPath, URL } from 'node:url'
+import { defineConfig } from 'vite'
+import plugin from '@vitejs/plugin-react'
+import fs from 'fs'
+import path from 'path'
+import { env } from 'process'
 
-import { defineConfig } from 'vite';
-import plugin from '@vitejs/plugin-react';
-import fs from 'fs';
-import path from 'path';
-import child_process from 'child_process';
-import { env } from 'process';
+// --- НОВЕ: прапорець для вмикання HTTPS ---
+const useHttps = env.USE_HTTPS === "true"
 
+// Шляхи до сертифікатів (використовуються лише локально)
 const baseFolder =
-    env.APPDATA !== undefined && env.APPDATA !== ''
+    env.APPDATA && env.APPDATA !== ''
         ? `${env.APPDATA}/ASP.NET/https`
-        : `${env.HOME}/.aspnet/https`;
+        : `${env.HOME}/.aspnet/https`
 
-const certificateName = "simpletodolesson.client";
-const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
-const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
+const certificateName = "simpletodolesson.client"
+const certFilePath = path.join(baseFolder, `${certificateName}.pem`)
+const keyFilePath = path.join(baseFolder, `${certificateName}.key`)
 
-// --- ПОЧАТОК ЗМІН: ЦЕЙ БЛОК КОМЕНТУЄМО ДЛЯ DOCKER BUILD ---
-/*
-if (!fs.existsSync(baseFolder)) {
-    fs.mkdirSync(baseFolder, { recursive: true });
-}
+// Формування URL API
+const target = env.ASPNETCORE_HTTPS_PORT
+    ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}`
+    : env.ASPNETCORE_URLS
+        ? env.ASPNETCORE_URLS.split(';')[0]
+        : 'https://localhost:7154'
 
-if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
-    if (0 !== child_process.spawnSync('dotnet', [
-        'dev-certs',
-        'https',
-        '--export-path',
-        certFilePath,
-        '--format',
-        'Pem',
-        '--no-password',
-    ], { stdio: 'inherit', }).status) {
-        throw new Error("Could not create certificate.");
-    }
-}
-*/
-// --- КІНЕЦЬ ЗМІН: ЦЕЙ БЛОК КОМЕНТУЄМО ДЛЯ DOCKER BUILD ---
-
-
-const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
-    env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7154';
-
-// https://vitejs.dev/config/
+// --- ЕКСПОРТ КОНФІГУ ---
 export default defineConfig({
     plugins: [plugin()],
     resolve: {
@@ -54,30 +37,19 @@ export default defineConfig({
     },
     server: {
         proxy: {
-            '^/article': {
-                target,
-                secure: false
-            },
-            '^/account': {
-                target,
-                secure: false
-            },
-            '^/comment': {
-                target,
-                secure: false
-            },
-            '^/bonus': {
-                target,
-                secure: false
-            }
+            '^/article': { target, secure: false },
+            '^/account': { target, secure: false },
+            '^/comment': { target, secure: false },
+            '^/bonus': { target, secure: false }
         },
         port: parseInt(env.DEV_SERVER_PORT || '51424'),
-        // Секція HTTPS. Хоча вона і використовує закоментовані вище змінні,
-        // вона не активується при "vite build" (production), тому її можна залишити.
-        // Якщо буде нова помилка, ми приберемо і її.
-        https: {
-            key: fs.readFileSync(keyFilePath),
-            cert: fs.readFileSync(certFilePath),
-        }
+
+        // --- ГОЛОВНЕ: HTTPS умикається тільки локально ---
+        https: useHttps
+            ? {
+                  key: fs.readFileSync(keyFilePath),
+                  cert: fs.readFileSync(certFilePath),
+              }
+            : false
     }
 })
