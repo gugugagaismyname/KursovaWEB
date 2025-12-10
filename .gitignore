@@ -1,0 +1,50 @@
+# ==================================
+# Visual Studio / .NET Core
+# ==================================
+
+# Build / Binaries
+[Bb]in/
+[Oo]bj/
+*.log
+*.pdb
+*.suo
+*.user
+*.bak
+*.vs/
+*.vshost.*
+
+# NuGet package restore cache
+.nuget/
+**/packages/
+/packages/
+
+# ==================================
+# Local Databases (SQLite)
+# ==================================
+
+# Ваші файли бази даних, які не повинні бути в репозиторії.
+# Вони створяться автоматично на сервері Render.
+SimpleTODOLesson.Server/app.db
+SimpleTODOLesson.Server/app.db-shm
+SimpleTODOLesson.Server/app.db-wal
+
+# ==================================
+# simpletodolesson.client (React/Vite)
+# ==================================
+
+# Node Modules (залежності)
+simpletodolesson.client/node_modules/
+simpletodolesson.client/dist/
+
+# Конфігураційні файли Vite
+# [cite_start]simpletodolesson.client/vite.config.js - залишаємо, він потрібен для збірки [cite: 836]
+
+# ==================================
+# IDE / Editor Files
+# ==================================
+
+# Visual Studio Code
+.vscode/
+
+# Rider / JetBrains
+.idea/
