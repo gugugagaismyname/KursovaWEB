@@ -1,3 +1,5 @@
+// simpletodolesson.client/vite.config.js (Виправлена версія)
+
 import { fileURLToPath, URL } from 'node:url';
 
 import { defineConfig } from 'vite';
@@ -16,6 +18,8 @@ const certificateName = "simpletodolesson.client";
 const certFilePath = path.join(baseFolder, `${certificateName}.pem`);
 const keyFilePath = path.join(baseFolder, `${certificateName}.key`);
 
+// --- ПОЧАТОК ЗМІН: ЦЕЙ БЛОК КОМЕНТУЄМО ДЛЯ DOCKER BUILD ---
+/*
 if (!fs.existsSync(baseFolder)) {
     fs.mkdirSync(baseFolder, { recursive: true });
 }
@@ -33,6 +37,9 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
         throw new Error("Could not create certificate.");
     }
 }
+*/
+// --- КІНЕЦЬ ЗМІН: ЦЕЙ БЛОК КОМЕНТУЄМО ДЛЯ DOCKER BUILD ---
+
 
 const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
     env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7154';
@@ -65,6 +72,9 @@ export default defineConfig({
             }
         },
         port: parseInt(env.DEV_SERVER_PORT || '51424'),
+        // Секція HTTPS. Хоча вона і використовує закоментовані вище змінні,
+        // вона не активується при "vite build" (production), тому її можна залишити.
+        // Якщо буде нова помилка, ми приберемо і її.
         https: {
             key: fs.readFileSync(keyFilePath),
             cert: fs.readFileSync(certFilePath),
